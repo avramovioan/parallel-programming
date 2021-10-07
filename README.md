@@ -1,2 +1,2 @@
-# Parallel programming repository dedicated for the assigned homework.
-Ioan Avramov
+## Parallel programming repository dedicated for the assigned homework.
+###Ioan Avramov
