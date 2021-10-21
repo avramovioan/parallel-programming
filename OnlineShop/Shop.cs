@@ -33,7 +33,7 @@ namespace OnlineShop
         public bool Purchase(string product, int quantity)
         {
             Monitor.Enter(locker);
-            if (items.ContainsKey(product) && items[product] <= quantity)
+            if (items.ContainsKey(product) && items[product] >= quantity)
             {
                 items[product] -= quantity;
                 Monitor.Exit(locker);
