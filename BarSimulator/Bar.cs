@@ -67,7 +67,7 @@ namespace BarSimulator
         {
             foreach (Drink drink in drinks)
             {
-                string stock = drink.Quantity == drink.SoldQunatity ? "out of stock" : $"{drink.Quantity} in stock";
+                string stock = drink.Quantity == drink.SoldQunatity ? "out of stock" : $"{drink.Quantity-drink.SoldQunatity} in stock";
                 double earned = drink.SoldQunatity * drink.Price;
                 Console.WriteLine($"{drink.Name} : {stock}. Sold {drink.SoldQunatity} -- earned: {earned.ToString("0.##")}");
             }

@@ -84,11 +84,14 @@ namespace BarSimulator
                         DrinkType drink = (DrinkType)randomDrink;
                         if (CanAffordWantedDrink(drink))
                         {
-                            Bar.PurchaseDrink(drink);
-                            this.Budget -= Bar.GetDrinkPrice(drink);
-                            Console.WriteLine($"{Name} bought {drink.ToString()} and he is about to drink it.");
-                            Thread.Sleep(100);
-                            break;
+                            if(Bar.PurchaseDrink(drink))
+                            {
+                                this.Budget -= Bar.GetDrinkPrice(drink);
+                                Console.WriteLine($"{Name} bought {drink.ToString()} and he is about to drink it.");
+                                Thread.Sleep(100);
+                                break;
+                            }
+                            Console.WriteLine($"{Name} wanted {drink.ToString()} but it's out of stock.");
                         }
                         Console.WriteLine($"{Name} has not enough money for {drink.ToString()}.");
                         Thread.Sleep(100);
