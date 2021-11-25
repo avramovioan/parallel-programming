@@ -12,7 +12,7 @@ namespace ElevatorSimulator
     class Agent
     {
         public SecurityLevel securityLevel;
-        public Level currentFloor = Level.G;
+        public Level currentFloor;
         public Status status = Status.OutElevator;
         public string Name { get; set; }
         public Base _base;
@@ -21,20 +21,22 @@ namespace ElevatorSimulator
         public Agent(string name, Base b)
         {
             int n = random.Next(12);
-            if (n < 4) this.securityLevel = SecurityLevel.Confidential;
-            if (n < 8) this.securityLevel = SecurityLevel.Secret;
             if (n < 12) this.securityLevel = SecurityLevel.TopSecret;
+            if (n < 8) this.securityLevel = SecurityLevel.Secret;
+            if (n < 4) this.securityLevel = SecurityLevel.Confidential;
             this._base = b;
+            this.Name = name;
+            Console.WriteLine($"{this.Name} was created with {this.securityLevel} security level");
         }
         public void EnterBase()
         {
-            Console.WriteLine($"{this.Name} entered the base.");
-            this.currentFloor = Level.G;
+            //Console.WriteLine($"{this.Name} entered the base.");
+            this.currentFloor = Level.T2;
             Thread.Sleep(100);
         }
         public AgentActivity GetRandomActivity()
         {
-            int n = random.Next(12);
+            int n = random.Next(10);
             if (n < 5) return AgentActivity.Wander;
             if (n < 10) return AgentActivity.CallElevator;
             return AgentActivity.Leave;
@@ -42,20 +44,22 @@ namespace ElevatorSimulator
         public Level GetRandomLevel()
         {
             Level chosenLevel;
-            int n = random.Next(12);
             do
-            {
-                if (n < 3) chosenLevel = Level.G;
-                if (n < 6) chosenLevel = Level.S;
-                if (n < 9) chosenLevel = Level.T1;
+            { // making sure the agent doesn't call the same floor
+                int n = random.Next(3);
                 chosenLevel = Level.T2;
-            } while (chosenLevel != currentFloor);
+                if (n < 9) chosenLevel = Level.T1;
+                if (n < 6) chosenLevel = Level.S;
+                if (n < 3) chosenLevel = Level.G;
+                 
+            } while (chosenLevel == currentFloor);
             return chosenLevel;
         }
 
         public void CallElevator()
         {
-            _base.elevator.RegisterExternalCall(currentFloor);
+            _base.elevator.RegisterCall(currentFloor);
+            Console.WriteLine($"{this.Name} called the elevator on {this.currentFloor}");
             this.status = Status.WaitElevator;
             ElevatorEngagement();
         }
@@ -63,20 +67,22 @@ namespace ElevatorSimulator
         {
             while (this.status == Status.WaitElevator) // waiting elevator
             {
+                //Console.WriteLine($"{Name} waiting on level - {this.currentFloor} | enter status:{_base.elevator.Enter(this)}");
                 if (_base.elevator.CurrentLevel == this.currentFloor && _base.elevator.Enter(this)) //trying to enter the elevator
                 {
+                    //Console.WriteLine($"{Name} Entered the elevator");
                     this.status = Status.InElevator;
                     Level wantedLevel = GetRandomLevel();
-                    _base.elevator.RegisterInternalCall(wantedLevel, this);
+                    _base.elevator.RegisterCall(wantedLevel, this);
                     Console.WriteLine($"{this.Name} entered the elevator and wants to go to {TranslateLevel(wantedLevel)}.");
                     while (this.status == Status.InElevator) //trying to leave the elevator
                     {
-                        if (_base.elevator.CurrentLevel == this.currentFloor) 
+                        if (_base.elevator.CurrentLevel == wantedLevel) // wait for the elevator to reach the floor
                         {
-                            if (!_base.elevator.Leave(this)) // choose another floor if agent rejected
+                            if (!_base.elevator.Leave(this)) //check if door will open for agent to leave
                             {
-                                wantedLevel = GetRandomLevel();
-                                _base.elevator.RegisterInternalCall(wantedLevel, this);
+                                wantedLevel = GetRandomLevel(); // choose another floor if agent rejected
+                                _base.elevator.RegisterCall(wantedLevel, this);
                                 Console.WriteLine($"{this.Name} got rejected and now wants to go to {TranslateLevel(wantedLevel)}.");
                                 continue;
                             }
@@ -87,7 +93,8 @@ namespace ElevatorSimulator
                         Thread.Sleep(500);
                     }
                 }
-                Thread.Sleep(1000);
+                //Console.WriteLine($"{Name} tried to enter once, but couldn't.");
+                Thread.Sleep(500);
             }
         }
         public void PaintTheBaseRed()
@@ -101,13 +108,15 @@ namespace ElevatorSimulator
                 {
                     case AgentActivity.Wander:
                         Console.WriteLine($"{this.Name} is wandering the halls of the base' {TranslateLevel(this.currentFloor)}.");
+                        Thread.Sleep(2000);
                         break;
                     case AgentActivity.CallElevator:
                         Console.WriteLine($"{this.Name} called the elevator on {TranslateLevel(this.currentFloor)}.");
                         CallElevator();
+                        Thread.Sleep(2000);
                         break;
                     case AgentActivity.Leave:
-                        Console.WriteLine($"{this.Name} decided to leave the base and go home.");
+                        Console.WriteLine($"{this.Name} decided to leave the base.");
                         inBase = false;
                         break;
                     default:

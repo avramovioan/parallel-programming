@@ -6,7 +6,8 @@ namespace ElevatorSimulator
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            Base b = new Base(3);
+            b.OpenBase();
         }
     }
 }
