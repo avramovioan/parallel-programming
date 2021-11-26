@@ -13,8 +13,14 @@ namespace ElevatorSimulator
         private readonly int SPEED = 1000;
         public Level CurrentLevel = Level.G;
         private volatile bool DoorOpen = false;
+        private Base _base;
 
         private List<Call> ElevatorCalls = new List<Call>();
+
+        public Elevator(Base b)
+        {
+            this._base = b;
+        }
 
         public void RegisterCall(Level callLevel, Agent agent = null)
         {
@@ -25,7 +31,7 @@ namespace ElevatorSimulator
         }
         public void ElevatorWork()
         {
-            while (Base.agents_in_base)
+            while (_base.agents_in_base)
             {
                 if(ElevatorCalls.Any())
                 {
@@ -34,33 +40,30 @@ namespace ElevatorSimulator
                     {
                         nextDestination = this.ElevatorCalls.DefaultIfEmpty(null).FirstOrDefault(c => c.Caller != null) ?? this.ElevatorCalls[0];
                         this.ElevatorCalls.Remove(nextDestination);
-                        Console.WriteLine($"{nextDestination.LevelTo} || {this.ElevatorCalls.Count}" ); 
+                        Console.WriteLine($"Elevator - next stop: {_base.TranslateLevel(nextDestination.LevelTo)}" ); 
                     }
-                    Console.WriteLine("The elevator door closes.");
+                    if (DoorOpen) Console.WriteLine("The elevator door closes.");
                     this.DoorOpen = false; // close the door in case it's open
                     int floorDifference = Math.Abs((int)nextDestination.LevelTo - (int)CurrentLevel); // calculate difference in floors
-                    Console.WriteLine("Elevator starts moving.");
+                    if (floorDifference > 0) Console.WriteLine("Elevator starts moving.");
                     for (int i = 1; i <= floorDifference; i++)
                     {
                         Thread.Sleep(SPEED); // wait for the elevator to arrive
-                        Console.Write("Traveled a floor | ");
+                        Console.WriteLine("Traveled a floor.");
                     }
-                    Console.WriteLine();
-                    Console.WriteLine("The ELEVATOR has arrived at the wanted floor.");
+                    Console.WriteLine($"The ELEVATOR is at the {_base.TranslateLevel(nextDestination.LevelTo)} floor.");
                     if (nextDestination.Caller == null || SecurityCheck(nextDestination.LevelTo, nextDestination.Caller)) this.DoorOpen = true; // check if agent is eligible
                     this.CurrentLevel = (Level)nextDestination.LevelTo; // set the level to the wanted one
-                    Console.WriteLine($"Door open on level {this.CurrentLevel}: " + this.DoorOpen);
+                    Console.WriteLine($"The door opened: {this.DoorOpen}");
                     Thread.Sleep(2000); // wait for the agent to leave/get inside before executing next command
                 }
             }     
         }
         public bool Enter(Agent agent)
         {
-            //Console.WriteLine($"{agent.Name} - {agent.currentFloor} | Elevator - {this.CurrentLevel} | Door - {this.DoorOpen} | agent_floor - {agent.currentFloor} | el_floor - {this.CurrentLevel}");
             semaphore.WaitOne();
             if (this.DoorOpen && agent.currentFloor == this.CurrentLevel)
             {
-                Console.WriteLine($"{agent.Name} entered");
                 return true;
             }
             semaphore.Release();
@@ -69,10 +72,8 @@ namespace ElevatorSimulator
 
         public bool Leave(Agent agent)
         {
-            //Console.WriteLine($"{agent.Name} wants to leave");
             if (this.DoorOpen)
             {
-                //Console.WriteLine($"{agent.Name} wants to leave");
                 semaphore.Release();
                 this.DoorOpen = false; //close the door after agent leaves
                 return true;

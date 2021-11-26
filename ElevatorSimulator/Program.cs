@@ -6,8 +6,10 @@ namespace ElevatorSimulator
     {
         static void Main(string[] args)
         {
-            Base b = new Base(3);
+            // You can adjust the agent count here (while initializing the base)
+            Base b = new Base(3); // = 5 agents in the base
             b.OpenBase();
+            
         }
     }
 }

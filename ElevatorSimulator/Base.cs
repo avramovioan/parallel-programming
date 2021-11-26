@@ -13,10 +13,10 @@ namespace ElevatorSimulator
     {
         public Elevator elevator;
         private int agentCount = 0;
-        public static bool agents_in_base = false;
+        public bool agents_in_base = false;
         public Base(int count)
         {
-            this.elevator = new Elevator();
+            this.elevator = new Elevator(this);
             this.agentCount = count;
         }
         public void OpenBase()
@@ -25,7 +25,6 @@ namespace ElevatorSimulator
             agents_in_base = true;
             elevator_thread.Start();
             List<Thread> threads = new List<Thread>();
-            //threads.Add(elevator_thread);
             for (int i = 1; i <= agentCount; i++)
             {
                 Agent agent = new Agent(i.ToString(), this);
@@ -35,6 +34,23 @@ namespace ElevatorSimulator
             }            
             foreach (var t in threads) t.Join();
             agents_in_base = false;
+            Console.WriteLine("==== ALL AGENTS LEFT - BASE CLOSES ====");
+        }
+        public string TranslateLevel(Level level)
+        {
+            switch (level)
+            {
+                case Level.G:
+                    return "Ground floor";
+                case Level.S:
+                    return "Secret floor";
+                case Level.T1:
+                    return "Top secret floor";
+                case Level.T2:
+                    return "Ultra-Top secret floor";
+                default:
+                    throw new NotImplementedException();
+            }
         }
     }
 }

@@ -30,36 +30,34 @@ namespace ElevatorSimulator
         }
         public void EnterBase()
         {
-            //Console.WriteLine($"{this.Name} entered the base.");
-            this.currentFloor = Level.T2;
+            this.currentFloor = Level.G;
             Thread.Sleep(100);
         }
         public AgentActivity GetRandomActivity()
         {
-            int n = random.Next(10);
-            if (n < 5) return AgentActivity.Wander;
-            if (n < 10) return AgentActivity.CallElevator;
+            int n = random.Next(12);
+            if (n < 4) return AgentActivity.Wander;
+            if (n < 8) return AgentActivity.CallElevator;
             return AgentActivity.Leave;
         }
-        public Level GetRandomLevel()
+        public Level GetRandomLevel(Level currLevel)
         {
             Level chosenLevel;
             do
             { // making sure the agent doesn't call the same floor
-                int n = random.Next(3);
+                int n = random.Next(12);
                 chosenLevel = Level.T2;
                 if (n < 9) chosenLevel = Level.T1;
                 if (n < 6) chosenLevel = Level.S;
-                if (n < 3) chosenLevel = Level.G;
-                 
-            } while (chosenLevel == currentFloor);
+                if (n < 3) chosenLevel = Level.G;     
+            } while (chosenLevel == currLevel);
             return chosenLevel;
         }
 
         public void CallElevator()
         {
             _base.elevator.RegisterCall(currentFloor);
-            Console.WriteLine($"{this.Name} called the elevator on {this.currentFloor}");
+            Console.WriteLine($"{this.Name} called the elevator on {_base.TranslateLevel(this.currentFloor)}");
             this.status = Status.WaitElevator;
             ElevatorEngagement();
         }
@@ -67,33 +65,30 @@ namespace ElevatorSimulator
         {
             while (this.status == Status.WaitElevator) // waiting elevator
             {
-                //Console.WriteLine($"{Name} waiting on level - {this.currentFloor} | enter status:{_base.elevator.Enter(this)}");
                 if (_base.elevator.CurrentLevel == this.currentFloor && _base.elevator.Enter(this)) //trying to enter the elevator
                 {
-                    //Console.WriteLine($"{Name} Entered the elevator");
                     this.status = Status.InElevator;
-                    Level wantedLevel = GetRandomLevel();
+                    Level wantedLevel = GetRandomLevel(this.currentFloor);
                     _base.elevator.RegisterCall(wantedLevel, this);
-                    Console.WriteLine($"{this.Name} entered the elevator and wants to go to {TranslateLevel(wantedLevel)}.");
+                    Console.WriteLine($"{this.Name} entered the elevator and wants to go to {_base.TranslateLevel(wantedLevel)}.");
                     while (this.status == Status.InElevator) //trying to leave the elevator
                     {
                         if (_base.elevator.CurrentLevel == wantedLevel) // wait for the elevator to reach the floor
                         {
                             if (!_base.elevator.Leave(this)) //check if door will open for agent to leave
                             {
-                                wantedLevel = GetRandomLevel(); // choose another floor if agent rejected
+                                wantedLevel = GetRandomLevel(_base.elevator.CurrentLevel); // choose another floor if agent rejected
                                 _base.elevator.RegisterCall(wantedLevel, this);
-                                Console.WriteLine($"{this.Name} got rejected and now wants to go to {TranslateLevel(wantedLevel)}.");
+                                Console.WriteLine($"{this.Name} got rejected and now wants to go to {_base.TranslateLevel(wantedLevel)}.");
                                 continue;
                             }
                             this.status = Status.OutElevator; //leaving elevator
                             this.currentFloor = wantedLevel;
-                            Console.WriteLine($"{this.Name} left the elevator at {TranslateLevel(currentFloor)}.");
+                            Console.WriteLine($"{this.Name} left the elevator at {_base.TranslateLevel(currentFloor)}.");
                         }
                         Thread.Sleep(500);
                     }
                 }
-                //Console.WriteLine($"{Name} tried to enter once, but couldn't.");
                 Thread.Sleep(500);
             }
         }
@@ -107,11 +102,11 @@ namespace ElevatorSimulator
                 switch (nextActivity)
                 {
                     case AgentActivity.Wander:
-                        Console.WriteLine($"{this.Name} is wandering the halls of the base' {TranslateLevel(this.currentFloor)}.");
+                        Console.WriteLine($"{this.Name} is wandering the halls of the base' {_base.TranslateLevel(this.currentFloor)}.");
                         Thread.Sleep(2000);
                         break;
                     case AgentActivity.CallElevator:
-                        Console.WriteLine($"{this.Name} called the elevator on {TranslateLevel(this.currentFloor)}.");
+                        Console.WriteLine($"{this.Name} called the elevator on {_base.TranslateLevel(this.currentFloor)}.");
                         CallElevator();
                         Thread.Sleep(2000);
                         break;
@@ -124,22 +119,6 @@ namespace ElevatorSimulator
                 }
             }
             Console.WriteLine($"{Name} is going back home.");
-        }
-        public string TranslateLevel(Level level)
-        {
-            switch (level)
-            {
-                case Level.G:
-                    return "Ground floor";
-                case Level.S:
-                    return "Secret floor";
-                case Level.T1:
-                    return "Top secret floor";
-                case Level.T2:
-                    return "Ultra-Top secret floor";
-                default:
-                    throw new NotImplementedException();
-            }
         }
     }
    
